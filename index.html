@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Haringey Required Sweep Intensity Index</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============ RESET & BASE ============ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --green-dark: #1a7a3d;
+  --green-light: #7bc47f;
+  --amber: #f0b429;
+  --orange: #e8622a;
+  --red-deep: #b91c1c;
+  --bg: #faf8f5;
+  --text: #2d2a26;
+  --text-light: #6b6560;
+  --accent: #c44e2b;
+  --border: #e5e0d8;
+  --panel-bg: #ffffff;
+  --serif: 'Playfair Display', Georgia, serif;
+  --sans: 'Source Sans 3', 'Source Sans Pro', -apple-system, sans-serif;
+}
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.65;
+}
+
+/* ============ HEADER ============ */
+.site-header {
+  padding: 2rem 2rem 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.site-header h1 {
+  font-family: var(--serif);
+  font-size: 2.4rem;
+  font-weight: 900;
+  line-height: 1.15;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.site-header .subtitle {
+  font-size: 1.15rem;
+  color: var(--text-light);
+  font-weight: 300;
+  max-width: 680px;
+}
+
+.site-header .credit {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  margin-top: 0.75rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.illustrative-banner {
+  background: #fff3cd;
+  border: 1px solid #f0d68a;
+  border-radius: 6px;
+  padding: 0.65rem 1rem;
+  font-size: 0.85rem;
+  color: #856404;
+  margin: 1rem 2rem 0;
+  max-width: 1168px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ============ MAP CONTAINER ============ */
+.map-wrap {
+  position: relative;
+  max-width: 1200px;
+  margin: 1rem auto 0;
+  padding: 0 2rem;
+  overflow: hidden;
+}
+
+#map {
+  height: 60vh;
+  min-height: 400px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  z-index: 1;
+}
+
+/* ============ LEGEND ============ */
+.legend {
+  position: absolute;
+  bottom: 24px;
+  left: 48px;
+  background: rgba(255,255,255,0.95);
+  border-radius: 6px;
+  padding: 12px 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  z-index: 1000;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.legend h4 {
+  font-family: var(--serif);
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend-swatch {
+  width: 18px;
+  height: 14px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.provision-note {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--text-light);
+}
+
+.provision-bar {
+  height: 6px;
+  background: #e5e0d8;
+  border-radius: 3px;
+  margin-top: 4px;
+  position: relative;
+}
+
+.provision-line {
+  position: absolute;
+  left: 20%;
+  top: -2px;
+  height: 10px;
+  width: 2px;
+  background: var(--accent);
+}
+
+.provision-label {
+  font-size: 0.65rem;
+  color: var(--accent);
+  position: absolute;
+  left: 20%;
+  top: -16px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+/* ============ SIDE PANEL ============ */
+.side-panel {
+  position: absolute;
+  top: 0;
+  right: 32px;
+  width: 340px;
+  height: 60vh;
+  min-height: 400px;
+  background: var(--panel-bg);
+  border-radius: 0 8px 8px 0;
+  box-shadow: -4px 0 16px rgba(0,0,0,0.08);
+  z-index: 1001;
+  overflow-y: auto;
+  transform: translateX(calc(100% + 32px));
+  transition: transform 0.3s ease;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  pointer-events: none;
+}
+
+.side-panel.open { pointer-events: auto; transform: translateX(0); }
+
+.panel-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  cursor: pointer;
+  color: var(--text-light);
+  line-height: 1;
+  padding: 4px 8px;
+}
+
+.panel-close:hover { color: var(--text); }
+
+.panel-content { padding: 20px 20px 24px; }
+
+.panel-ward-name {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.panel-rsi-score {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 4px 0;
+}
+
+.panel-band-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 12px;
+  display: inline-block;
+  margin-bottom: 16px;
+}
+
+.panel-section-title {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-light);
+  margin: 16px 0 8px;
+  font-weight: 600;
+}
+
+/* Stacked bar */
+.component-bar {
+  display: flex;
+  height: 20px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.component-bar div { transition: width 0.4s ease; }
+
+.bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  color: var(--text-light);
+  margin-bottom: 12px;
+}
+
+/* Indicator rows */
+.indicator-row {
+  border-bottom: 1px solid #f0ece6;
+  font-size: 0.8rem;
+}
+
+.indicator-row:last-child { border-bottom: none; }
+
+.indicator-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-radius: 4px;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.indicator-header:hover { background: #f7f4ef; }
+
+.indicator-name {
+  flex: 1;
+  padding-right: 8px;
+}
+
+.indicator-expand {
+  font-size: 0.6rem;
+  color: var(--text-light);
+  margin-left: 4px;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.indicator-row.expanded .indicator-expand { transform: rotate(90deg); }
+
+.indicator-explanation {
+  display: none;
+  padding: 6px 8px 10px 28px;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--text-light);
+  background: #faf8f5;
+  border-radius: 0 0 4px 4px;
+  margin-bottom: 2px;
+}
+
+.indicator-raw {
+  font-size: 0.7rem;
+  color: #8b7d6b;
+  padding: 0 0.7rem 0.3rem 2.5rem;
+  font-style: italic;
+}
+.indicator-row.expanded .indicator-explanation { display: block; }
+
+.indicator-tier {
+  font-size: 0.6rem;
+  color: #fff;
+  background: #7ba0c4;
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.indicator-tier.t2 { background: #a0a0a0; }
+
+.indicator-score {
+  font-weight: 600;
+  min-width: 28px;
+  text-align: right;
+}
+
+.kbt-note {
+  background: #f7f4ef;
+  border-left: 3px solid var(--amber);
+  padding: 10px 12px;
+  margin-top: 14px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  border-radius: 0 4px 4px 0;
+}
+
+.kbt-note strong {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-light);
+  margin-bottom: 4px;
+}
+
+/* ============ NARRATIVE ============ */
+.narrative {
+  max-width: 720px;
+  margin: 3rem auto;
+  padding: 0 2rem;
+}
+
+.narrative h2 {
+  font-family: var(--serif);
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 3rem 0 1rem;
+  line-height: 1.25;
+  color: var(--text);
+}
+
+.narrative h2:first-child { margin-top: 0; }
+
+.narrative h3 {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 2.5rem 0 0.75rem;
+  color: var(--text);
+}
+
+.narrative p {
+  margin-bottom: 1.1rem;
+  font-size: 1.05rem;
+}
+
+.narrative .lead {
+  font-size: 1.25rem;
+  font-weight: 300;
+  line-height: 1.55;
+  color: var(--text);
+  border-left: 4px solid var(--accent);
+  padding-left: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.narrative blockquote {
+  border-left: 4px solid var(--amber);
+  padding: 1rem 1.25rem;
+  margin: 1.5rem 0;
+  background: #fdf8ee;
+  border-radius: 0 4px 4px 0;
+  font-style: italic;
+  color: var(--text-light);
+}
+
+.narrative .stat-box {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+  text-align: center;
+}
+
+.narrative .stat-number {
+  font-family: var(--serif);
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: var(--accent);
+  display: block;
+}
+
+.narrative .stat-label {
+  font-size: 0.9rem;
+  color: var(--text-light);
+  margin-top: 4px;
+}
+
+.narrative ol, .narrative ul {
+  margin: 1rem 0 1.5rem 1.5rem;
+  font-size: 1.05rem;
+}
+
+.narrative li { margin-bottom: 0.6rem; }
+
+.narrative strong { font-weight: 600; }
+
+.section-divider {
+  width: 60px;
+  height: 3px;
+  background: var(--border);
+  margin: 3rem auto;
+  border: none;
+}
+
+/* ============ METHODOLOGY ============ */
+.methodology {
+  max-width: 720px;
+  margin: 0 auto 4rem;
+  padding: 0 2rem;
+}
+
+.methodology-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 18px;
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text);
+  width: 100%;
+  text-align: left;
+}
+
+.methodology-toggle:hover { background: #f5f2ed; }
+
+.methodology-toggle .arrow {
+  transition: transform 0.2s;
+  font-size: 0.8rem;
+}
+
+.methodology-toggle.active .arrow { transform: rotate(90deg); }
+
+.methodology-body {
+  display: none;
+  padding: 1.5rem 0;
+  font-size: 0.95rem;
+}
+
+.methodology-body.show { display: block; }
+
+.methodology-body h3 {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  margin: 1.5rem 0 0.75rem;
+}
+
+.methodology-body p { margin-bottom: 0.8rem; }
+
+.methodology-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.85rem;
+}
+
+.methodology-body th,
+.methodology-body td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.methodology-body th {
+  font-weight: 600;
+  background: #f7f4ef;
+}
+
+.methodology-body code {
+  background: #f0ece6;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+
+.methodology-body .invite {
+  background: #f0f7f0;
+  border: 1px solid #c4dfc4;
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+}
+
+/* ============ FOOTER ============ */
+.site-footer {
+  text-align: center;
+  padding: 2rem;
+  font-size: 0.8rem;
+  color: var(--text-light);
+  border-top: 1px solid var(--border);
+}
+
+/* ============ MOBILE ============ */
+@media (max-width: 768px) {
+  .site-header { padding: 1.5rem 1rem 0.75rem; }
+  .site-header h1 { font-size: 1.6rem; }
+  .site-header .subtitle { font-size: 1rem; }
+  .illustrative-banner { margin: 0.75rem 1rem 0; }
+  .map-wrap { padding: 0 1rem; }
+  #map { height: 50vh; min-height: 300px; }
+
+  .side-panel {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: auto;
+    max-height: 60vh;
+    min-height: auto;
+    border-radius: 16px 16px 0 0;
+    border-left: none;
+    border-top: 3px solid var(--accent);
+    transform: translateY(110%);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+  }
+
+  .side-panel.open { transform: translateY(0); }
+
+  .legend {
+    left: 16px;
+    bottom: 16px;
+    padding: 8px 12px;
+    font-size: 0.7rem;
+  }
+
+  .narrative { padding: 0 1rem; }
+  .narrative h2 { font-size: 1.4rem; }
+  .narrative p, .narrative li { font-size: 0.95rem; }
+  .narrative .lead { font-size: 1.1rem; }
+  .methodology { padding: 0 1rem; }
+}
+
+/* ============ PRINT ============ */
+@media print {
+  .map-wrap, .legend, .side-panel, .illustrative-banner { display: none; }
+  .site-header h1 { font-size: 1.8rem; }
+  .narrative { max-width: 100%; margin: 1rem 0; padding: 0; }
+  .narrative h2 { page-break-before: auto; }
+  .narrative p { font-size: 0.9rem; }
+  .methodology-body { display: block !important; }
+  .methodology-toggle { display: none; }
+  body { background: #fff; }
+}
+
+/* ============ LEAFLET OVERRIDES ============ */
+.leaflet-tooltip {
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <h1>Haringey Required Sweep Intensity Index</h1>
+  <p class="subtitle">Where streets need cleaning most &mdash; and where the current schedule falls short</p>
+  <p class="credit">Built with open data. Methodology fully transparent.</p>
+</header>
+
+<div class="illustrative-banner" style="background: #e8f0e8; border-color: #4a8a4f;">
+  <strong>Data:</strong> All scores derived from published public datasets. Click any ward, then click any indicator for source details.
+</div>
+
+<!-- MAP -->
+<div class="map-wrap">
+  <div id="map"></div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <h4>Required Sweep Intensity</h4>
+    <div class="legend-row"><span class="legend-swatch" style="background:#1a7a3d"></span> 0&ndash;2 Low</div>
+    <div class="legend-row"><span class="legend-swatch" style="background:#7bc47f"></span> 2&ndash;4 Standard</div>
+    <div class="legend-row"><span class="legend-swatch" style="background:#f0b429"></span> 4&ndash;6 Elevated</div>
+    <div class="legend-row"><span class="legend-swatch" style="background:#e8622a"></span> 6&ndash;8 High</div>
+    <div class="legend-row"><span class="legend-swatch" style="background:#b91c1c"></span> 8&ndash;10 Critical</div>
+    <div class="provision-note">
+      <div style="position:relative;height:20px;">
+        <span class="provision-label">1x/week (all wards)</span>
+        <div class="provision-bar">
+          <div class="provision-line"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Side Panel -->
+  <div class="side-panel" id="sidePanel">
+    <button class="panel-close" onclick="closePanel()">&times;</button>
+    <div class="panel-content" id="panelContent"></div>
+  </div>
+</div>
+
+<!-- NARRATIVE -->
+<section class="narrative">
+
+  <h2>The gap between need and provision</h2>
+
+  <p class="lead">
+    Haringey gives every residential road one street sweep per week. But demand for cleaning varies enormously across the borough. Wards in the east &mdash; Northumberland Park, Tottenham Hale, Seven Sisters &mdash; are far more deprived and record far more police-logged environmental disorder. Yet they receive exactly the same service as Muswell Hill and Highgate.
+  </p>
+
+  <div class="stat-box">
+    <span class="stat-number">25&times;</span>
+    <span class="stat-label">Variation in the RSI score between Haringey&rsquo;s highest- and lowest-demand wards &mdash; all served at the same frequency</span>
+  </div>
+
+  <h2>What needs to change</h2>
+
+  <p>
+    This is not a request for more money. It is a request for smarter allocation of existing resources. Four steps:
+  </p>
+
+  <ol>
+    <li><strong>Publish ward-level cleansing data.</strong> The council holds complaint volumes, sweep schedules, and enforcement data by area. Publish it, so residents can see how their ward is served and hold the council to account.</li>
+    <li><strong>Move to demand-weighted scheduling.</strong> Follow Greenwich: use the data to sweep high-demand areas more often and low-demand areas less often. Same budget, better outcomes. The RSI provides a starting framework; the council&rsquo;s own data can refine it.</li>
+    <li><strong>Publish or commission LEQ survey data.</strong> The last published independent survey was 2017/18 &mdash; seven years ago. If the council has commissioned subsequent KBT or other LEQ surveys, publish them. If not, commission one now. Either way, an up-to-date evidence base is essential before the Veolia contract renegotiation.</li>
+    <li><strong>Build demand-based KPIs into the next Veolia contract.</strong> When the contract comes up in 2027, specify outcomes &mdash; cleanliness to Grade B standard across all wards &mdash; rather than inputs. Pay for clean streets, not for sweeps.</li>
+  </ol>
+
+  <hr class="section-divider">
+
+  <h2>The evidence</h2>
+
+  <h3>What the professionals found</h3>
+
+  <p>
+    In 2017/18, Haringey commissioned Keep Britain Tidy to independently survey street cleanliness across the borough. 640 sites, ten wards, graded on the national NI195 scale. Haringey scored two to three times worse than the London average on every measure: litter, detritus, graffiti, and fly-posting.
+  </p>
+
+  <p>
+    The east-west split was unmistakable. <strong>Northumberland Park</strong> was the worst ward for every element. On Leeside Road, surveyors encountered what they described as one of the most significant fly-tips the surveyor had ever seen. <strong>Alexandra Park</strong> and <strong>Fortis Green</strong> fared among the best.
+  </p>
+
+  <blockquote>
+    In Noel Park, KBT surveyors recorded &ldquo;a noticeable difference between Litter standards seen in the Main Retail area and the surrounding streets, caused by considerably different frequencies of cleansing.&rdquo;
+  </blockquote>
+
+  <p>
+    Industry and warehousing areas &mdash; concentrated in the east &mdash; had 22&ndash;45% of sites below acceptable standard. The overall Haringey rating: &ldquo;Unsatisfactory.&rdquo;
+  </p>
+
+  <h3>Deprivation and litter: what the research says</h3>
+
+  <p>
+    Haringey is the 6th most deprived borough in London. In the east, more than half of neighbourhoods fall in the 20% most deprived nationally. In the west, almost none. Every major study of street cleanliness finds the same thing: more deprived areas have significantly worse litter and fly-tipping.
+  </p>
+
+  <p>
+    Keep Britain Tidy (the national charity that monitors street cleanliness) surveys thousands of sites a year. Their data shows that <strong>28% of sites in the most deprived areas are graded &lsquo;unacceptable,&rsquo; compared to just 3% in the least deprived</strong>. In Scotland, monitoring found one in five sites had significant litter in the most deprived areas, against one in 44 in the least deprived. A Defra-funded study of fly-tipping across all English councils found deprivation was the single strongest predictor of how much fly-tipping an area gets.
+  </p>
+
+  <h3>The fly-tipping crisis</h3>
+
+  <p>
+    English councils dealt with <strong>1.26 million fly-tipping incidents in 2024/25</strong> &mdash; up 9% on the previous year. Street cleansing costs English local authorities an estimated &pound;717&ndash;850 million annually. In Haringey, DEFRA recorded over 34,000 fly-tipping incidents in a single year, second only to Enfield. The council&rsquo;s own 2019 strategy acknowledged the Tottenham High Road corridor as the worst-affected area. In 2024/25, 2,554 fines were issued totalling &pound;1.3 million.
+  </p>
+
+  <p>
+    Enforcement alone cannot solve this. Fly-tipping breeds more fly-tipping: when a mattress appears on a corner, it signals that the area is unguarded, and the risk of further dumping rises sharply in the following days. The only effective response is rapid clearance before one incident becomes ten. That requires frequency, not just fines.
+  </p>
+
+  <h3>Other boroughs have moved on</h3>
+
+  <p>
+    In 2024, Greenwich approved <strong>variable-frequency sweeping based on speed of degradation</strong>. Areas that degrade faster are cleaned more often; areas that stay clean, less. Same budget, smarter allocation. Greenwich estimated savings of &pound;150,000 in year one, rising to &pound;1.2 million by 2028. Philadelphia uses block-level scoring to drive variable cleaning. Haringey still operates the uniform model these authorities have abandoned.
+  </p>
+
+  <h3>What the council already knows</h3>
+
+  <p>
+    The council cut sweeping from twice-weekly to once-weekly in January 2016, saving &pound;860,000. Performance dropped immediately. They commissioned the KBT survey which told them standards were failing in the east. They may have commissioned further LEQ surveys since &mdash; if so, they have not been published. Their fly-tipping strategy acknowledged the geographic concentration. Their public health data acknowledges the overconcentration of fast food outlets in Tottenham. The Veolia contract runs to 2027 &mdash; that renegotiation is the moment to shift from input-based to outcome-based KPIs.
+  </p>
+</section>
+
+<!-- METHODOLOGY -->
+<section class="methodology">
+  <button class="methodology-toggle" onclick="toggleMethodology()">
+    <span class="arrow">&#9654;</span> Methodology &amp; data sources
+  </button>
+  <div class="methodology-body" id="methodologyBody">
+    <h3>Indicators and weights</h3>
+    <p>Two indicators, both derived from published public datasets, selected because they are the two most strongly evidenced predictors of street cleaning demand in the peer-reviewed literature.</p>
+    <table>
+      <thead>
+        <tr><th>Indicator</th><th>Source</th><th>Date</th><th>Weight</th><th>Evidence base</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>IMD deprivation score</td><td><a href="https://www.gov.uk/government/statistics/english-indices-of-deprivation-2019" target="_blank">MHCLG IMD 2019</a></td><td>2019</td><td>55%</td><td>WRAP/Defra regression p&lt;0.001; Slough study r=0.67</td></tr>
+        <tr><td>Environmental ASB (MPS)</td><td><a href="https://www.met.police.uk/foi-ai/" target="_blank">MPS FOI (M2045)</a></td><td>2025</td><td>45%</td><td>Visible disorder predicts further offending; leading indicator per parliamentary evidence</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Why not more indicators?</strong> We tested seven indicators. FixMyStreet report rates were rejected because crowdsourced civic data has a well-documented socio-economic reporting bias: residents in deprived areas suffer from &ldquo;reporting fatigue&rdquo; and are statistically less likely to report environmental issues &mdash; meaning FixMyStreet systematically undercounts need in the wards that need the most help (confirmed by mySociety&rsquo;s own analysis of IMD vs. report rates). Population density, food outlet density, station usage, and housing type all correlate with the two retained indicators. Adding them improves precision marginally but at the cost of transparency and robustness.</p>
+
+    <h3>How the data was processed</h3>
+    <p><strong>IMD deprivation</strong> &mdash; LSOA-level IMD 2019 overall scores for all 145 Haringey LSOAs. LSOA population-weighted centroids fetched from the ONS Open Geography Portal, then mapped to 2022 wards via point-in-polygon. Ward score is the population-weighted average of constituent LSOA scores. IMD is the official measure of relative deprivation and, per WRAP/Defra analysis, the single strongest predictor of fly-tipping rates across English local authorities. It captures the structural drivers of waste generation: lower vehicle ownership (limiting HWRC access), cost barriers to bulky waste collection, and higher turnover of lower-quality goods in low-income households.</p>
+    <p><strong>Environmental ASB</strong> &mdash; Metropolitan Police Service CAD records obtained via FOI (reference M2045). Filtered to ASB Environmental opening type only (excludes ASB Nuisance and ASB Personal). Non-duplicate Haringey records matched to wards using MPS ward codes. Count divided by Census 2021 ward population to give reports per 1,000 residents. 283 environmental ASB incidents across 21 wards. Enviro-ASB functions as a leading indicator of environmental collapse: Routine Activity Theory and Broken Windows Theory both predict (and the data confirms) that visible environmental disorder lowers the threshold for further offending. Parliamentary evidence reviews consistently identify ASB as a precursor to larger-scale fly-tipping. This makes it not just a measure of current conditions but a forecast of near-term deterioration.</p>
+
+    <h3>Normalisation</h3>
+    <p>Each indicator is normalised to a 0&ndash;10 scale using min-max normalisation across Haringey&rsquo;s 21 wards:</p>
+    <p><code>ward_score = ((ward_value &minus; min_value) / (max_value &minus; min_value)) &times; 10</code></p>
+    <p>The ward with the highest raw value on any indicator scores 10, the lowest scores 0, and others are distributed proportionally.</p>
+
+    <h3>Composite score</h3>
+    <p><code>RSI = &Sigma; (indicator_normalised_score &times; indicator_weight)</code></p>
+    <p>Result: each ward gets an RSI score from 0 to 10.</p>
+
+    <h3>Banding</h3>
+    <table>
+      <thead><tr><th>RSI range</th><th>Band</th><th>Implied frequency</th></tr></thead>
+      <tbody>
+        <tr><td>0&ndash;2</td><td>Low</td><td>Fortnightly may suffice</td></tr>
+        <tr><td>2&ndash;4</td><td>Standard</td><td>Weekly (current baseline)</td></tr>
+        <tr><td>4&ndash;6</td><td>Elevated</td><td>2&times; per week</td></tr>
+        <tr><td>6&ndash;8</td><td>High</td><td>3&times; per week or daily on key streets</td></tr>
+        <tr><td>8&ndash;10</td><td>Critical</td><td>Daily sweep + targeted enforcement</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Known limitations</h3>
+    <p><strong>IMD vintage.</strong> The main Index of Multiple Deprivation used here was published in 2019 using 2015 population estimates. A 2025 update is now being released (the rural report was published March 2026); we will incorporate the full 2025 dataset when it becomes available for all geographies.</p>
+    <p><strong>LSOA-to-ward mapping.</strong> IMD uses 2011 LSOA boundaries; Haringey&rsquo;s wards were redrawn in 2022. We map LSOAs to wards using ONS population-weighted centroids and point-in-polygon matching, which is a best-fit approximation.</p>
+    <p><strong>Environmental ASB sample size.</strong> Only 283 ASB Environmental records exist for Haringey in the MPS dataset &mdash; between 5 and 28 per ward. This small sample means per-capita rates are sensitive to individual incidents. However, the geographic pattern (highest rates in Northumberland Park and Tottenham Central) is consistent with the deprivation gradient.</p>
+
+    <h3>Source datasets</h3>
+    <ul>
+      <li>Index of Multiple Deprivation 2019 &mdash; <a href="https://www.gov.uk/government/statistics/english-indices-of-deprivation-2019" target="_blank">MHCLG File 7</a> (all IoD scores, ranks, deciles)</li>
+      <li>MPS Environmental ASB &mdash; FOI reference M2045, CAD data covering ASB Environmental incidents ward-coded to 2022 boundaries (2025)</li>
+      <li>LSOA centroids &mdash; <a href="https://geoportal.statistics.gov.uk/" target="_blank">ONS Open Geography Portal</a> (LSOA 2011 population-weighted centroids)</li>
+      <li>Census 2021 population &mdash; <a href="https://www.citypopulation.de/en/uk/london/wards/E09000014__haringey/" target="_blank">citypopulation.de</a> (referencing ONS Census 2021)</li>
+      <li>Ward boundaries &mdash; <a href="https://mapit.mysociety.org/" target="_blank">MapIt (mySociety)</a></li>
+      <li>KBT LEQ survey reports (2017/18) &mdash; commissioned by Haringey Council</li>
+      <li>Haringey Council Overview &amp; Scrutiny Committee &mdash; <a href="https://www.minutes.haringey.gov.uk/documents/s98644/Scrutiny%20Street%20Sweeping%20Report%201%2021112017%20Overview%20and%20Scrutiny%20Committee.pdf" target="_blank">Scrutiny Review of Street Sweeping (Nov 2017)</a></li>
+    </ul>
+
+    <h3>Key academic and policy references</h3>
+    <ul>
+      <li>WRAP/Defra &mdash; <em>Fly-tipping: Drivers, Deterrents and Impacts</em> (2021). IMD the strongest predictor of fly-tipping rates nationally, p&lt;0.001.</li>
+      <li>Slough Borough Council &mdash; <em>Investigation into Fly-Tipping in the Borough of Slough</em>. IMD correlation r=0.67; PRS correlation r=0.46.</li>
+      <li>Keep Britain Tidy &mdash; Local Environmental Quality Survey of England (LEQSE). 28% unacceptable in most deprived areas vs 3% in least deprived.</li>
+      <li>Keep Scotland Beautiful &mdash; Litter Emergency survey. 1 in 5 sites with significant litter in most deprived areas vs 1 in 44 in least deprived.</li>
+      <li>mySociety Research &mdash; <a href="https://www.mysociety.org/2019/10/11/how-do-different-forms-of-deprivation-affect-fixmystreet-reports/" target="_blank">How do different forms of deprivation affect FixMyStreet reports?</a> (2019). Documents socio-economic reporting bias and &ldquo;reporting fatigue&rdquo;.</li>
+      <li>Defra &mdash; <a href="https://www.gov.uk/government/statistics/fly-tipping-statistics-for-england/fly-tipping-statistics-for-england-2024-to-2025" target="_blank">Fly-tipping statistics for England 2024&ndash;25</a>. 1.26 million incidents, up 9% year-on-year.</li>
+      <li>House of Commons Communities &amp; Local Government Committee &mdash; <a href="https://publications.parliament.uk/pa/cm201415/cmselect/cmcomloc/607/607.pdf" target="_blank">Litter and fly-tipping in England</a> (2015). &pound;717&ndash;850m annual local authority spend on street cleansing.</li>
+    </ul>
+
+    <h3>Reproducibility</h3>
+    <p>All source data, processing scripts, and intermediate files are published alongside this page. The ward boundary GeoJSON, LSOA centroids, IMD scores, and MPS ASB data are all available for download. The processing script calculates every score from raw public data with no manual adjustments. Anyone can audit, challenge, or improve the methodology.</p>
+
+    <div class="invite">
+      <strong>An open invitation.</strong> If the council holds better sub-borough data &mdash; ward-level complaint volumes, sweep schedules, fly-tipping heat maps, inspection scores &mdash; we welcome it. Publish your data, and we will incorporate it. The RSI fills a gap the council has not yet filled. Better data makes a better index.
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  Haringey Required Sweep Intensity Index &middot; Open data &middot; Open methodology
+</footer>
+
+<!-- ============ JAVASCRIPT ============ -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ============ WARD DATA (all real — sourced from public datasets) ============
+const wardData = {
+  "Alexandra Park": {
+    rsi: 2.4,
+    indicators: {
+      imd: { score: 0.0, label: "IMD deprivation score", raw: "12.1 (pop-weighted avg)" },
+      env_asb: { score: 5.4, label: "Environmental ASB (MPS)", raw: "1.24 per 1k residents (11 reports)" },
+    },
+    kbt: "Among the best wards surveyed. Detritus was the main issue, with leaf fall contributing to problems on residential roads."
+  },
+  "Bounds Green": {
+    rsi: 1.8,
+    indicators: {
+      imd: { score: 3.0, label: "IMD deprivation score", raw: "22.4 (pop-weighted avg)" },
+      env_asb: { score: 0.3, label: "Environmental ASB (MPS)", raw: "0.51 per 1k residents (5 reports)" },
+    },
+    kbt: null
+  },
+  "Bruce Castle": {
+    rsi: 5.9,
+    indicators: {
+      imd: { score: 7.9, label: "IMD deprivation score", raw: "38.9 (pop-weighted avg)" },
+      env_asb: { score: 3.5, label: "Environmental ASB (MPS)", raw: "0.96 per 1k residents (13 reports)" },
+    },
+    kbt: "Litter and graffiti prevalent on footpaths. Vandalised utility boxes observed throughout the ward."
+  },
+  "Crouch End": {
+    rsi: 0.7,
+    indicators: {
+      imd: { score: 0.9, label: "IMD deprivation score", raw: "15.2 (pop-weighted avg)" },
+      env_asb: { score: 0.5, label: "Environmental ASB (MPS)", raw: "0.54 per 1k residents (7 reports)" },
+    },
+    kbt: "Leaf fall heavy. Retail areas acceptable for litter but residential roads off retail areas heavily affected."
+  },
+  "Fortis Green": {
+    rsi: 0.4,
+    indicators: {
+      imd: { score: 0.3, label: "IMD deprivation score", raw: "13.1 (pop-weighted avg)" },
+      env_asb: { score: 0.6, label: "Environmental ASB (MPS)", raw: "0.56 per 1k residents (7 reports)" },
+    },
+    kbt: "Litter better than other areas surveyed. Graffiti observed on utility boxes and alleyway walls."
+  },
+  "Harringay": {
+    rsi: 4.8,
+    indicators: {
+      imd: { score: 4.0, label: "IMD deprivation score", raw: "25.5 (pop-weighted avg)" },
+      env_asb: { score: 5.8, label: "Environmental ASB (MPS)", raw: "1.30 per 1k residents (19 reports)" },
+    },
+    kbt: "Serious detritus on Ladder streets. Fly-tipping observed near Haringey Passage."
+  },
+  "Hermitage & Gardens": {
+    rsi: 2.3,
+    indicators: {
+      imd: { score: 3.4, label: "IMD deprivation score", raw: "23.7 (pop-weighted avg)" },
+      env_asb: { score: 0.9, label: "Environmental ASB (MPS)", raw: "0.59 per 1k residents (5 reports)" },
+    },
+    kbt: null
+  },
+  "Highgate": {
+    rsi: 0.7,
+    indicators: {
+      imd: { score: 0.7, label: "IMD deprivation score", raw: "14.5 (pop-weighted avg)" },
+      env_asb: { score: 0.6, label: "Environmental ASB (MPS)", raw: "0.55 per 1k residents (7 reports)" },
+    },
+    kbt: "Detritus was the main issue. Leaf fall not cleared, causing related drainage and slip problems."
+  },
+  "Hornsey": {
+    rsi: 1.8,
+    indicators: {
+      imd: { score: 3.3, label: "IMD deprivation score", raw: "23.4 (pop-weighted avg)" },
+      env_asb: { score: 0.0, label: "Environmental ASB (MPS)", raw: "0.47 per 1k residents (7 reports)" },
+    },
+    kbt: null
+  },
+  "Muswell Hill": {
+    rsi: 1.9,
+    indicators: {
+      imd: { score: 0.3, label: "IMD deprivation score", raw: "13.0 (pop-weighted avg)" },
+      env_asb: { score: 3.9, label: "Environmental ASB (MPS)", raw: "1.03 per 1k residents (9 reports)" },
+    },
+    kbt: null
+  },
+  "Noel Park": {
+    rsi: 5.7,
+    indicators: {
+      imd: { score: 6.4, label: "IMD deprivation score", raw: "34.0 (pop-weighted avg)" },
+      env_asb: { score: 4.9, label: "Environmental ASB (MPS)", raw: "1.17 per 1k residents (16 reports)" },
+    },
+    kbt: "Heavy litter on side streets off the high street. KBT noted \u2018considerably different frequencies of cleansing\u2019 as the cause of variation between main retail area and surrounding streets."
+  },
+  "Northumberland Park": {
+    rsi: 10.0,
+    indicators: {
+      imd: { score: 10.0, label: "IMD deprivation score", raw: "46.1 (pop-weighted avg)" },
+      env_asb: { score: 10.0, label: "Environmental ASB (MPS)", raw: "1.90 per 1k residents (28 reports)" },
+    },
+    kbt: "Among the least favourable of all wards for every element surveyed. Massive fly-tips observed. Leeside Road had \u2018one of the most significant fly-tips the surveyor had ever seen.\u2019 Industrial areas severely affected."
+  },
+  "Seven Sisters": {
+    rsi: 7.7,
+    indicators: {
+      imd: { score: 6.1, label: "IMD deprivation score", raw: "33.0 (pop-weighted avg)" },
+      env_asb: { score: 9.6, label: "Environmental ASB (MPS)", raw: "1.84 per 1k residents (17 reports)" },
+    },
+    kbt: null
+  },
+  "South Tottenham": {
+    rsi: 5.7,
+    indicators: {
+      imd: { score: 6.6, label: "IMD deprivation score", raw: "34.5 (pop-weighted avg)" },
+      env_asb: { score: 4.6, label: "Environmental ASB (MPS)", raw: "1.13 per 1k residents (19 reports)" },
+    },
+    kbt: null
+  },
+  "St Ann's": {
+    rsi: 3.7,
+    indicators: {
+      imd: { score: 4.5, label: "IMD deprivation score", raw: "27.4 (pop-weighted avg)" },
+      env_asb: { score: 2.7, label: "Environmental ASB (MPS)", raw: "0.85 per 1k residents (9 reports)" },
+    },
+    kbt: null
+  },
+  "Stroud Green": {
+    rsi: 4.5,
+    indicators: {
+      imd: { score: 2.4, label: "IMD deprivation score", raw: "20.1 (pop-weighted avg)" },
+      env_asb: { score: 7.1, label: "Environmental ASB (MPS)", raw: "1.48 per 1k residents (16 reports)" },
+    },
+    kbt: null
+  },
+  "Tottenham Central": {
+    rsi: 7.9,
+    indicators: {
+      imd: { score: 6.6, label: "IMD deprivation score", raw: "34.6 (pop-weighted avg)" },
+      env_asb: { score: 9.5, label: "Environmental ASB (MPS)", raw: "1.83 per 1k residents (27 reports)" },
+    },
+    kbt: null
+  },
+  "Tottenham Hale": {
+    rsi: 7.6,
+    indicators: {
+      imd: { score: 6.6, label: "IMD deprivation score", raw: "34.4 (pop-weighted avg)" },
+      env_asb: { score: 8.8, label: "Environmental ASB (MPS)", raw: "1.72 per 1k residents (21 reports)" },
+    },
+    kbt: "Residential areas near the High Road had serious litter issues. Fly-tipping around Roseberry Avenue and Carbuncle Passage."
+  },
+  "West Green": {
+    rsi: 5.3,
+    indicators: {
+      imd: { score: 6.2, label: "IMD deprivation score", raw: "33.2 (pop-weighted avg)" },
+      env_asb: { score: 4.2, label: "Environmental ASB (MPS)", raw: "1.07 per 1k residents (16 reports)" },
+    },
+    kbt: null
+  },
+  "White Hart Lane": {
+    rsi: 5.1,
+    indicators: {
+      imd: { score: 8.2, label: "IMD deprivation score", raw: "39.9 (pop-weighted avg)" },
+      env_asb: { score: 1.3, label: "Environmental ASB (MPS)", raw: "0.65 per 1k residents (9 reports)" },
+    },
+    kbt: null
+  },
+  "Woodside": {
+    rsi: 4.3,
+    indicators: {
+      imd: { score: 4.8, label: "IMD deprivation score", raw: "28.3 (pop-weighted avg)" },
+      env_asb: { score: 3.6, label: "Environmental ASB (MPS)", raw: "0.98 per 1k residents (15 reports)" },
+    },
+    kbt: "Among the best for litter and detritus. Graffiti was a serious issue in industrial areas."
+  },
+};
+
+// Indicator weights (sum to 1.0)
+const weights = {
+  imd: 0.55,
+  env_asb: 0.45
+};
+
+const tierLabels = {
+  imd: "T1", env_asb: "T1"
+};
+
+const indicatorExplanations = {
+  imd: "Index of Multiple Deprivation 2019 overall score, population-weighted average of LSOA-level data aggregated to 2022 ward boundaries using ONS LSOA population-weighted centroids. Source: MHCLG English Indices of Deprivation 2019, File 7. Northumberland Park (46.1) is the most deprived ward \u2014 Keep Britain Tidy research shows the most deprived areas have nearly 3\u00d7 more litter.",
+  env_asb: "Environmental antisocial behaviour reports per 1,000 residents, from Metropolitan Police Service (MPS) CAD data. Covers ASB Environmental incidents only \u2014 a category including littering, drugs paraphernalia, fly-tipping, and environmental nuisance. Source: MPS FOI data (ref M2045), non-duplicate records, ward-coded to 2022 boundaries. Northumberland Park has the highest rate (1.90 per 1k); Hornsey the lowest (0.47 per 1k). This is direct police-recorded evidence of environmental disorder at ward level."
+};
+
+// Colour helpers
+function getRsiColor(rsi) {
+  if (rsi < 2) return '#1a7a3d';
+  if (rsi < 4) return '#7bc47f';
+  if (rsi < 6) return '#f0b429';
+  if (rsi < 8) return '#e8622a';
+  return '#b91c1c';
+}
+
+function getRsiBand(rsi) {
+  if (rsi < 2) return { label: 'Low', desc: 'Fortnightly may suffice', bg: '#e6f4ea', fg: '#1a7a3d' };
+  if (rsi < 4) return { label: 'Standard', desc: 'Weekly (current baseline)', bg: '#e8f5e9', fg: '#4a8a4f' };
+  if (rsi < 6) return { label: 'Elevated', desc: '2x per week', bg: '#fff8e1', fg: '#b8860b' };
+  if (rsi < 8) return { label: 'High', desc: '3x per week or daily on key streets', bg: '#fff3e0', fg: '#d84315' };
+  return { label: 'Critical', desc: 'Daily sweep + targeted enforcement', bg: '#fce4ec', fg: '#b91c1c' };
+}
+
+// Component bar colours (Tier 1 = blues, Tier 2 = greys)
+const barColors = {
+  imd: '#e8622a', env_asb: '#8b5cf6'
+};
+
+// ============ GEOJSON (embedded) ============
+const wardsGeoJSON = {"type":"FeatureCollection","features":[{"type":"Feature","properties":{"name":"Alexandra Park"},"geometry":{"type":"Polygon","coordinates":[[[-0.14447,51.60012],[-0.14417,51.6011],[-0.14197,51.60371],[-0.14315,51.60672],[-0.14343,51.60883],[-0.13871,51.61019],[-0.12263,51.59993],[-0.12006,51.59756],[-0.1154,51.5919],[-0.11832,51.59104],[-0.12001,51.59189],[-0.12385,51.59181],[-0.12762,51.59087],[-0.12729,51.5899],[-0.13172,51.58953],[-0.13318,51.58794],[-0.13363,51.58812],[-0.13357,51.5904],[-0.13276,51.59133],[-0.1329,51.59187],[-0.1351,51.59345],[-0.13766,51.59275],[-0.13953,51.59413],[-0.14001,51.5939],[-0.14063,51.59512],[-0.14,51.59544],[-0.14088,51.59687],[-0.14145,51.59671],[-0.14137,51.59717],[-0.14224,51.59801],[-0.14165,51.59816],[-0.14303,51.60022],[-0.14427,51.59971],[-0.14447,51.60012]]]}},{"type":"Feature","properties":{"name":"Bounds Green"},"geometry":{"type":"Polygon","coordinates":[[[-0.13871,51.61019],[-0.1352,51.61122],[-0.12766,51.60941],[-0.12632,51.60931],[-0.12495,51.60995],[-0.12349,51.60868],[-0.11562,51.60842],[-0.11649,51.60543],[-0.1167,51.60408],[-0.11613,51.60403],[-0.11682,51.60119],[-0.11583,51.601],[-0.11587,51.60064],[-0.1168,51.60004],[-0.11724,51.59876],[-0.11642,51.59847],[-0.11734,51.59845],[-0.11767,51.59775],[-0.12006,51.59756],[-0.12433,51.60117],[-0.13871,51.61019]]]}},{"type":"Feature","properties":{"name":"Bruce Castle"},"geometry":{"type":"Polygon","coordinates":[[[-0.0856,51.60847],[-0.06734,51.60861],[-0.06814,51.60631],[-0.06778,51.60243],[-0.06807,51.59743],[-0.06946,51.59406],[-0.07206,51.59599],[-0.07894,51.59369],[-0.07879,51.59697],[-0.07936,51.59699],[-0.07948,51.59816],[-0.07681,51.59835],[-0.07753,51.60073],[-0.07898,51.60061],[-0.08018,51.60282],[-0.07985,51.60301],[-0.08698,51.60328],[-0.08579,51.60567],[-0.0856,51.60847]]]}},{"type":"Feature","properties":{"name":"Crouch End"},"geometry":{"type":"Polygon","coordinates":[[[-0.13991,51.57978],[-0.13786,51.58035],[-0.13757,51.5832],[-0.13633,51.58366],[-0.13696,51.58441],[-0.13746,51.58425],[-0.13746,51.58489],[-0.13314,51.58603],[-0.13242,51.58513],[-0.128,51.58536],[-0.12424,51.58375],[-0.12419,51.58233],[-0.12213,51.58246],[-0.12102,51.58214],[-0.12145,51.58184],[-0.12108,51.58165],[-0.11911,51.58239],[-0.11827,51.58225],[-0.1146,51.57748],[-0.11509,51.57719],[-0.11435,51.57624],[-0.11888,51.57473],[-0.11987,51.57547],[-0.12486,51.57409],[-0.12757,51.57415],[-0.13339,51.57288],[-0.13826,51.57911],[-0.14,51.57869],[-0.13991,51.57978]]]}},{"type":"Feature","properties":{"name":"Fortis Green"},"geometry":{"type":"Polygon","coordinates":[[[-0.14808,51.58622],[-0.15105,51.58548],[-0.15161,51.58574],[-0.15483,51.58316],[-0.15811,51.58333],[-0.15618,51.58226],[-0.15558,51.58133],[-0.15777,51.58235],[-0.16112,51.58249],[-0.16096,51.58304],[-0.16303,51.58426],[-0.16113,51.58538],[-0.15962,51.58446],[-0.15794,51.58574],[-0.1579,51.58621],[-0.15713,51.58619],[-0.15868,51.58663],[-0.15863,51.588],[-0.16023,51.58799],[-0.16016,51.5897],[-0.15976,51.58972],[-0.15943,51.59157],[-0.15869,51.592],[-0.15969,51.59223],[-0.16176,51.59748],[-0.15648,51.60532],[-0.15586,51.60547],[-0.15608,51.60512],[-0.15341,51.60285],[-0.15295,51.59919],[-0.15133,51.59747],[-0.14465,51.60007],[-0.14344,51.59977],[-0.14352,51.60018],[-0.14303,51.60022],[-0.14165,51.59816],[-0.14224,51.59801],[-0.14137,51.59717],[-0.14145,51.59671],[-0.14088,51.59687],[-0.14,51.59544],[-0.14063,51.59512],[-0.13999,51.59423],[-0.14073,51.59455],[-0.14085,51.59394],[-0.14291,51.59293],[-0.14362,51.59308],[-0.14324,51.59247],[-0.1436,51.59199],[-0.14528,51.59258],[-0.14916,51.59164],[-0.1493,51.58815],[-0.15054,51.58805],[-0.14996,51.58682],[-0.14818,51.58685],[-0.14808,51.58622]]]}},{"type":"Feature","properties":{"name":"Harringay"},"geometry":{"type":"Polygon","coordinates":[[[-0.10403,51.56497],[-0.10615,51.56596],[-0.10493,51.57507],[-0.1054,51.57792],[-0.10694,51.58057],[-0.11065,51.5845],[-0.11261,51.58822],[-0.10338,51.59045],[-0.10214,51.5889],[-0.09828,51.58731],[-0.09941,51.58674],[-0.09831,51.58396],[-0.09943,51.58288],[-0.09909,51.5828],[-0.09818,51.57737],[-0.09874,51.57721],[-0.09833,51.57492],[-0.09602,51.57066],[-0.10403,51.56497]]]}},{"type":"Feature","properties":{"name":"Hermitage & Gardens"},"geometry":{"type":"Polygon","coordinates":[[[-0.08146,51.5799],[-0.0807,51.57948],[-0.08583,51.57488],[-0.08724,51.5747],[-0.08686,51.5743],[-0.09764,51.57365],[-0.0985,51.57557],[-0.09874,51.57721],[-0.09818,51.57737],[-0.09909,51.58226],[-0.09434,51.58125],[-0.09028,51.58162],[-0.08488,51.58102],[-0.08146,51.5799]]]}},{"type":"Feature","properties":{"name":"Highgate"},"geometry":{"type":"Polygon","coordinates":[[[-0.17123,51.57242],[-0.1712,51.57357],[-0.16944,51.57397],[-0.16971,51.57637],[-0.16931,51.57742],[-0.16806,51.57693],[-0.16681,51.57866],[-0.16704,51.58176],[-0.16619,51.58204],[-0.16572,51.58322],[-0.16458,51.58396],[-0.16307,51.58437],[-0.16096,51.58304],[-0.16112,51.58249],[-0.15777,51.58235],[-0.15558,51.58133],[-0.15618,51.58226],[-0.15811,51.58333],[-0.15483,51.58316],[-0.15161,51.58574],[-0.15105,51.58548],[-0.14795,51.58623],[-0.14756,51.58622],[-0.14739,51.58435],[-0.14698,51.5844],[-0.14623,51.5825],[-0.14694,51.58063],[-0.14449,51.58111],[-0.14417,51.57967],[-0.13979,51.58033],[-0.14,51.57869],[-0.13826,51.57911],[-0.13339,51.57288],[-0.14063,51.56943],[-0.1424,51.56911],[-0.14438,51.57008],[-0.15015,51.57155],[-0.15774,51.57205],[-0.16048,51.57278],[-0.16454,51.5725],[-0.16729,51.57296],[-0.17123,51.57242]]]}},{"type":"Feature","properties":{"name":"Hornsey"},"geometry":{"type":"Polygon","coordinates":[[[-0.13363,51.58812],[-0.13318,51.58794],[-0.13172,51.58953],[-0.12729,51.5899],[-0.12762,51.59087],[-0.12385,51.59181],[-0.12001,51.59189],[-0.11832,51.59104],[-0.1154,51.5919],[-0.11282,51.58857],[-0.11048,51.58427],[-0.10627,51.57963],[-0.11019,51.57998],[-0.11192,51.58215],[-0.11628,51.58047],[-0.11701,51.58061],[-0.11827,51.58225],[-0.11911,51.58239],[-0.12108,51.58165],[-0.12145,51.58184],[-0.12102,51.58214],[-0.12213,51.58246],[-0.12419,51.58233],[-0.12424,51.58375],[-0.128,51.58536],[-0.13242,51.58513],[-0.13367,51.58662],[-0.13363,51.58812]]]}},{"type":"Feature","properties":{"name":"Muswell Hill"},"geometry":{"type":"Polygon","coordinates":[[[-0.13991,51.57978],[-0.13979,51.58033],[-0.14207,51.58027],[-0.14417,51.57967],[-0.14449,51.58111],[-0.14694,51.58063],[-0.14623,51.5825],[-0.14698,51.5844],[-0.14739,51.58435],[-0.14756,51.58622],[-0.14808,51.58622],[-0.14818,51.58685],[-0.14996,51.58682],[-0.15054,51.58805],[-0.1493,51.58815],[-0.14916,51.59164],[-0.14528,51.59258],[-0.1436,51.59199],[-0.14324,51.59247],[-0.14362,51.59308],[-0.14291,51.59293],[-0.14085,51.59394],[-0.14073,51.59455],[-0.13766,51.59275],[-0.1351,51.59345],[-0.13282,51.59178],[-0.13357,51.59042],[-0.13391,51.58747],[-0.13314,51.58603],[-0.13746,51.58489],[-0.13746,51.58425],[-0.13696,51.58441],[-0.13633,51.58366],[-0.13757,51.5832],[-0.13786,51.58035],[-0.13991,51.57978]]]}},{"type":"Feature","properties":{"name":"Noel Park"},"geometry":{"type":"Polygon","coordinates":[[[-0.12006,51.59756],[-0.11939,51.59782],[-0.11779,51.59701],[-0.11422,51.59639],[-0.1084,51.59733],[-0.09976,51.59959],[-0.09603,51.59832],[-0.09623,51.59795],[-0.09582,51.59795],[-0.0951,51.59632],[-0.09539,51.59562],[-0.0949,51.5955],[-0.10372,51.59026],[-0.11261,51.58822],[-0.12006,51.59756]]]}},{"type":"Feature","properties":{"name":"Northumberland Park"},"geometry":{"type":"Polygon","coordinates":[[[-0.05229,51.59354],[-0.05718,51.59396],[-0.05614,51.59616],[-0.05687,51.59646],[-0.06608,51.59695],[-0.06611,51.59733],[-0.06807,51.59743],[-0.06778,51.60243],[-0.06814,51.60631],[-0.06748,51.60864],[-0.0671,51.60895],[-0.06523,51.60859],[-0.05451,51.60889],[-0.04974,51.60724],[-0.04139,51.60565],[-0.04603,51.60012],[-0.0504,51.59666],[-0.05229,51.59354]]]}},{"type":"Feature","properties":{"name":"Seven Sisters"},"geometry":{"type":"Polygon","coordinates":[[[-0.08422,51.58567],[-0.07833,51.58518],[-0.07532,51.58422],[-0.07213,51.58398],[-0.07314,51.57786],[-0.07239,51.57563],[-0.07578,51.57549],[-0.07624,51.57494],[-0.08084,51.57564],[-0.08566,51.57504],[-0.0807,51.57948],[-0.08146,51.5799],[-0.08014,51.57985],[-0.07803,51.58111],[-0.08029,51.58193],[-0.07971,51.58262],[-0.0845,51.58367],[-0.08422,51.58567]]]}},{"type":"Feature","properties":{"name":"South Tottenham"},"geometry":{"type":"Polygon","coordinates":[[[-0.0532,51.58693],[-0.05783,51.58251],[-0.06194,51.58003],[-0.06218,51.57919],[-0.06116,51.57779],[-0.06673,51.57634],[-0.07239,51.57563],[-0.0731,51.57827],[-0.07207,51.58438],[-0.07033,51.58901],[-0.06803,51.5887],[-0.064,51.58953],[-0.06306,51.58829],[-0.05723,51.5879],[-0.0532,51.58693]]]}},{"type":"Feature","properties":{"name":"St Ann's"},"geometry":{"type":"Polygon","coordinates":[[[-0.09904,51.58237],[-0.09933,51.58319],[-0.09831,51.58396],[-0.09941,51.58674],[-0.09828,51.58731],[-0.09401,51.58604],[-0.08875,51.58648],[-0.08422,51.58567],[-0.0845,51.58367],[-0.07971,51.58262],[-0.08029,51.58193],[-0.07803,51.58111],[-0.08062,51.57978],[-0.08488,51.58102],[-0.09028,51.58162],[-0.09451,51.58126],[-0.09904,51.58237]]]}},{"type":"Feature","properties":{"name":"Stroud Green"},"geometry":{"type":"Polygon","coordinates":[[[-0.11701,51.58061],[-0.11585,51.58054],[-0.11192,51.58215],[-0.11019,51.57998],[-0.10627,51.57963],[-0.10526,51.57753],[-0.10492,51.57539],[-0.10615,51.56596],[-0.10403,51.56497],[-0.10488,51.56467],[-0.1094,51.56787],[-0.11502,51.57059],[-0.11536,51.57188],[-0.11608,51.57218],[-0.11555,51.57258],[-0.11579,51.57282],[-0.11755,51.57414],[-0.11955,51.57438],[-0.11435,51.57624],[-0.11509,51.57719],[-0.1146,51.57747],[-0.11701,51.58061]]]}},{"type":"Feature","properties":{"name":"Tottenham Central"},"geometry":{"type":"Polygon","coordinates":[[[-0.07899,51.59403],[-0.07894,51.59369],[-0.07742,51.59395],[-0.07206,51.59599],[-0.06946,51.59406],[-0.07033,51.58901],[-0.07213,51.58398],[-0.08679,51.58623],[-0.08694,51.58689],[-0.08299,51.58852],[-0.08346,51.59011],[-0.08268,51.59066],[-0.08298,51.59196],[-0.08341,51.59193],[-0.08341,51.59312],[-0.07899,51.59403]]]}},{"type":"Feature","properties":{"name":"Tottenham Hale"},"geometry":{"type":"Polygon","coordinates":[[[-0.05229,51.59354],[-0.05353,51.59001],[-0.05216,51.58766],[-0.0532,51.58693],[-0.05723,51.5879],[-0.06306,51.58829],[-0.064,51.58953],[-0.06803,51.5887],[-0.07033,51.58901],[-0.06962,51.59357],[-0.06807,51.59743],[-0.06611,51.59733],[-0.06608,51.59695],[-0.05687,51.59646],[-0.05614,51.59616],[-0.05718,51.59396],[-0.05229,51.59354]]]}},{"type":"Feature","properties":{"name":"West Green"},"geometry":{"type":"Polygon","coordinates":[[[-0.09603,51.59832],[-0.0863,51.59785],[-0.07948,51.59816],[-0.07936,51.59699],[-0.07879,51.59697],[-0.07899,51.59403],[-0.08341,51.59312],[-0.08341,51.59193],[-0.08298,51.59196],[-0.08268,51.59066],[-0.08346,51.59011],[-0.08299,51.58852],[-0.08694,51.58689],[-0.08679,51.58623],[-0.09438,51.58611],[-0.10108,51.58837],[-0.10214,51.5889],[-0.10338,51.59045],[-0.09504,51.59528],[-0.09531,51.59699],[-0.09623,51.59795],[-0.09603,51.59832]]]}},{"type":"Feature","properties":{"name":"White Hart Lane"},"geometry":{"type":"Polygon","coordinates":[[[-0.09747,51.60852],[-0.09766,51.60892],[-0.09576,51.6093],[-0.09516,51.60866],[-0.09247,51.60909],[-0.0856,51.60847],[-0.08579,51.60567],[-0.08698,51.60328],[-0.07985,51.60301],[-0.08018,51.60282],[-0.07898,51.60061],[-0.07753,51.60073],[-0.07681,51.59835],[-0.08469,51.59784],[-0.09527,51.59813],[-0.09956,51.59957],[-0.10085,51.59948],[-0.10131,51.59987],[-0.09731,51.60287],[-0.09731,51.6048],[-0.09679,51.60499],[-0.09722,51.60498],[-0.09864,51.60765],[-0.09729,51.60819],[-0.09747,51.60852]]]}},{"type":"Feature","properties":{"name":"Woodside"},"geometry":{"type":"Polygon","coordinates":[[[-0.09747,51.60852],[-0.09729,51.60819],[-0.09864,51.60765],[-0.09722,51.60498],[-0.09679,51.60499],[-0.09731,51.6048],[-0.09731,51.60287],[-0.10131,51.59987],[-0.10085,51.59948],[-0.1084,51.59733],[-0.11422,51.59639],[-0.11886,51.5975],[-0.1175,51.5978],[-0.11734,51.59845],[-0.11642,51.59847],[-0.11724,51.59876],[-0.1168,51.60004],[-0.11587,51.60064],[-0.11583,51.601],[-0.11682,51.60119],[-0.11613,51.60403],[-0.1167,51.60408],[-0.11649,51.60543],[-0.11562,51.60842],[-0.10391,51.60844],[-0.10251,51.60804],[-0.10176,51.60849],[-0.09747,51.60852]]]}}]};
+
+// ============ MAP INIT ============
+const map = L.map('map', {
+  zoomControl: true,
+  scrollWheelZoom: true,
+  minZoom: 12,
+  maxBoundsViscosity: 1.0
+}).setView([51.5905, -0.1050], 13);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  subdomains: 'abcd',
+  maxZoom: 18
+}).addTo(map);
+
+// Track active ward
+let activeLayer = null;
+
+// Default style
+function style(feature) {
+  const data = wardData[feature.properties.name];
+  const rsi = data ? data.rsi : 0;
+  return {
+    fillColor: getRsiColor(rsi),
+    weight: 1.5,
+    opacity: 1,
+    color: '#ffffff',
+    fillOpacity: 0.75
+  };
+}
+
+// Interaction handlers
+function highlightFeature(e) {
+  const layer = e.target;
+  if (layer === activeLayer) return;
+  layer.setStyle({ weight: 2.5, color: '#333', fillOpacity: 0.85 });
+}
+
+function resetHighlight(e) {
+  const layer = e.target;
+  if (layer === activeLayer) return;
+  geojsonLayer.resetStyle(layer);
+}
+
+function onFeatureClick(e) {
+  const name = e.target.feature.properties.name;
+  const data = wardData[name];
+  if (!data) return;
+
+  // Reset previous active
+  if (activeLayer) {
+    geojsonLayer.resetStyle(activeLayer);
+  }
+
+  // Set new active
+  activeLayer = e.target;
+  activeLayer.setStyle({ weight: 3, color: '#2d2a26', fillOpacity: 0.92 });
+
+  openPanel(name, data);
+}
+
+function onEachFeature(feature, layer) {
+  const data = wardData[feature.properties.name];
+  const rsi = data ? data.rsi.toFixed(1) : '?';
+  layer.bindTooltip(`<strong>${feature.properties.name}</strong><br>RSI: ${rsi}`, {
+    sticky: true,
+    direction: 'top',
+    offset: [0, -10]
+  });
+  layer.on({
+    mouseover: highlightFeature,
+    mouseout: resetHighlight,
+    click: onFeatureClick
+  });
+}
+
+const geojsonLayer = L.geoJSON(wardsGeoJSON, {
+  style: style,
+  onEachFeature: onEachFeature
+}).addTo(map);
+
+// Fit bounds, then lock max bounds to prevent zooming out beyond Haringey
+map.fitBounds(geojsonLayer.getBounds(), { padding: [20, 20] });
+map.setMaxBounds(geojsonLayer.getBounds().pad(0.3));
+
+// ============ PANEL ============
+function openPanel(name, data) {
+  const band = getRsiBand(data.rsi);
+  const panel = document.getElementById('sidePanel');
+  const content = document.getElementById('panelContent');
+
+  // Calculate weighted contributions for stacked bar
+  const contributions = {};
+  let totalWeighted = 0;
+  for (const [key, ind] of Object.entries(data.indicators)) {
+    const contrib = ind.score * weights[key];
+    contributions[key] = contrib;
+    totalWeighted += contrib;
+  }
+
+  // Build stacked bar HTML
+  let barHTML = '<div class="component-bar">';
+  for (const [key, contrib] of Object.entries(contributions)) {
+    const pct = (contrib / totalWeighted * 100);
+    if (pct > 0.5) {
+      barHTML += `<div style="width:${pct}%;background:${barColors[key]}" title="${data.indicators[key].label}: ${pct.toFixed(0)}%"></div>`;
+    }
+  }
+  barHTML += '</div>';
+
+  // Build indicator rows with clickable explanations
+  let rowsHTML = '';
+  for (const [key, ind] of Object.entries(data.indicators)) {
+    const tier = tierLabels[key];
+    const explanation = indicatorExplanations[key] || '';
+    const rawStr = ind.raw ? `<div class="indicator-raw">${ind.raw}</div>` : '';
+    rowsHTML += `
+      <div class="indicator-row" onclick="this.classList.toggle('expanded')">
+        <div class="indicator-header">
+          <span class="indicator-tier ${tier === 'T2' ? 't2' : ''}">${tier}</span>
+          <span class="indicator-name">${ind.label}</span>
+          <span class="indicator-score">${ind.score.toFixed(1)}</span>
+          <span class="indicator-expand">&#9654;</span>
+        </div>
+        ${rawStr}
+        <div class="indicator-explanation">${explanation}</div>
+      </div>`;
+  }
+
+  // KBT note
+  let kbtHTML = '';
+  if (data.kbt) {
+    kbtHTML = `
+      <div class="kbt-note">
+        <strong>KBT Surveyor Observation (2017/18)</strong>
+        ${data.kbt}
+      </div>`;
+  }
+
+  content.innerHTML = `
+    <div class="panel-ward-name">${name}</div>
+    <div class="panel-rsi-score" style="color:${getRsiColor(data.rsi)}">${data.rsi.toFixed(1)}</div>
+    <div class="panel-band-label" style="background:${band.bg};color:${band.fg}">${band.label} &mdash; ${band.desc}</div>
+
+    <div class="panel-section-title">Score composition</div>
+    ${barHTML}
+    <div class="bar-labels"><span>Tier 1: Direct demand</span><span>Tier 2: Structural</span></div>
+
+    <div class="panel-section-title">Component scores (0&ndash;10)</div>
+    ${rowsHTML}
+    ${kbtHTML}
+  `;
+
+  panel.classList.add('open');
+}
+
+function closePanel() {
+  document.getElementById('sidePanel').classList.remove('open');
+  if (activeLayer) {
+    geojsonLayer.resetStyle(activeLayer);
+    activeLayer = null;
+  }
+}
+
+// Close panel on Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closePanel();
+});
+
+// ============ METHODOLOGY TOGGLE ============
+function toggleMethodology() {
+  const body = document.getElementById('methodologyBody');
+  const btn = document.querySelector('.methodology-toggle');
+  body.classList.toggle('show');
+  btn.classList.toggle('active');
+}
+</script>
+
+</body>
+</html>

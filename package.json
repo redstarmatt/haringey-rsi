@@ -1,0 +1,11 @@
+{
+  "name": "haringey-rsi",
+  "version": "1.0.0",
+  "description": "Haringey Required Sweep Intensity Index — ward-level street cleaning demand map",
+  "scripts": {
+    "start": "serve . -l tcp://0.0.0.0:$PORT"
+  },
+  "dependencies": {
+    "serve": "^14"
+  }
+}

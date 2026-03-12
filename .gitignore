@@ -1,0 +1,17 @@
+# Large data files (too big for GitHub, not needed for live site)
+M2045_MPS_Antisocial_Behaviour.csv
+imd2019_file7.csv
+flytipping_la.ods
+orr_station_usage_2023_24.ods
+tfl_annual_2023.xlsx
+ward-atlas-data.csv
+ward-profiles.csv
+fsa_haringey.json
+voa_stock_2023/
+voa_stock_2023.zip
+
+# Claude config
+.claude/
+
+# Node
+node_modules/
