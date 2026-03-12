@@ -246,13 +246,6 @@ body {
 
 .component-bar div { transition: width 0.4s ease; }
 
-.bar-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.65rem;
-  color: var(--text-light);
-  margin-bottom: 12px;
-}
 
 /* Indicator rows */
 .indicator-row {
@@ -989,7 +982,7 @@ function getRsiBand(rsi) {
   return { label: 'Critical demand', bg: '#fce4ec', fg: '#b91c1c' };
 }
 
-// Component bar colours (Tier 1 = blues, Tier 2 = greys)
+// Component bar colours
 const barColors = {
   imd: '#e8622a', env_asb: '#8b5cf6'
 };
@@ -1140,7 +1133,6 @@ function openPanel(name, data) {
 
     <div class="panel-section-title">Score composition</div>
     ${barHTML}
-    <div class="bar-labels"><span>Tier 1: Direct demand</span><span>Tier 2: Structural</span></div>
 
     <div class="panel-section-title">Component scores (0&ndash;10)</div>
     ${rowsHTML}
