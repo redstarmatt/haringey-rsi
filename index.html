@@ -310,17 +310,7 @@ body {
 }
 .indicator-row.expanded .indicator-explanation { display: block; }
 
-.indicator-tier {
-  font-size: 0.6rem;
-  color: #fff;
-  background: #7ba0c4;
-  border-radius: 3px;
-  padding: 1px 5px;
-  margin-right: 6px;
-  flex-shrink: 0;
-}
-
-.indicator-tier.t2 { background: #a0a0a0; }
+.indicator-tier { display: none; }
 
 .indicator-score {
   font-weight: 600;
@@ -615,19 +605,11 @@ body {
   <!-- Legend -->
   <div class="legend">
     <h4>Required Sweep Intensity</h4>
-    <div class="legend-row"><span class="legend-swatch" style="background:#1a7a3d"></span> 0&ndash;2 Low</div>
+    <div class="legend-row"><span class="legend-swatch" style="background:#1a7a3d"></span> 0&ndash;2 Low demand</div>
     <div class="legend-row"><span class="legend-swatch" style="background:#7bc47f"></span> 2&ndash;4 Standard</div>
     <div class="legend-row"><span class="legend-swatch" style="background:#f0b429"></span> 4&ndash;6 Elevated</div>
-    <div class="legend-row"><span class="legend-swatch" style="background:#e8622a"></span> 6&ndash;8 High</div>
-    <div class="legend-row"><span class="legend-swatch" style="background:#b91c1c"></span> 8&ndash;10 Critical</div>
-    <div class="provision-note">
-      <div style="position:relative;height:20px;">
-        <span class="provision-label">1x/week (all wards)</span>
-        <div class="provision-bar">
-          <div class="provision-line"></div>
-        </div>
-      </div>
-    </div>
+    <div class="legend-row"><span class="legend-swatch" style="background:#e8622a"></span> 6&ndash;8 High demand</div>
+    <div class="legend-row"><span class="legend-swatch" style="background:#b91c1c"></span> 8&ndash;10 Critical demand</div>
   </div>
 
   <!-- Side Panel -->
@@ -753,13 +735,13 @@ body {
 
     <h3>Banding</h3>
     <table>
-      <thead><tr><th>RSI range</th><th>Band</th><th>Implied frequency</th></tr></thead>
+      <thead><tr><th>RSI range</th><th>Band</th></tr></thead>
       <tbody>
-        <tr><td>0&ndash;2</td><td>Low</td><td>Fortnightly may suffice</td></tr>
-        <tr><td>2&ndash;4</td><td>Standard</td><td>Weekly (current baseline)</td></tr>
-        <tr><td>4&ndash;6</td><td>Elevated</td><td>2&times; per week</td></tr>
-        <tr><td>6&ndash;8</td><td>High</td><td>3&times; per week or daily on key streets</td></tr>
-        <tr><td>8&ndash;10</td><td>Critical</td><td>Daily sweep + targeted enforcement</td></tr>
+        <tr><td>0&ndash;2</td><td>Low demand</td></tr>
+        <tr><td>2&ndash;4</td><td>Standard demand</td></tr>
+        <tr><td>4&ndash;6</td><td>Elevated demand</td></tr>
+        <tr><td>6&ndash;8</td><td>High demand</td></tr>
+        <tr><td>8&ndash;10</td><td>Critical demand</td></tr>
       </tbody>
     </table>
 
@@ -984,9 +966,6 @@ const weights = {
   env_asb: 0.45
 };
 
-const tierLabels = {
-  imd: "T1", env_asb: "T1"
-};
 
 const indicatorExplanations = {
   imd: "Index of Multiple Deprivation 2019 overall score, population-weighted average of LSOA-level data aggregated to 2022 ward boundaries using ONS LSOA population-weighted centroids. Source: MHCLG English Indices of Deprivation 2019, File 7. Northumberland Park (46.1) is the most deprived ward \u2014 Keep Britain Tidy research shows the most deprived areas have nearly 3\u00d7 more litter.",
@@ -1003,11 +982,11 @@ function getRsiColor(rsi) {
 }
 
 function getRsiBand(rsi) {
-  if (rsi < 2) return { label: 'Low', desc: 'Fortnightly may suffice', bg: '#e6f4ea', fg: '#1a7a3d' };
-  if (rsi < 4) return { label: 'Standard', desc: 'Weekly (current baseline)', bg: '#e8f5e9', fg: '#4a8a4f' };
-  if (rsi < 6) return { label: 'Elevated', desc: '2x per week', bg: '#fff8e1', fg: '#b8860b' };
-  if (rsi < 8) return { label: 'High', desc: '3x per week or daily on key streets', bg: '#fff3e0', fg: '#d84315' };
-  return { label: 'Critical', desc: 'Daily sweep + targeted enforcement', bg: '#fce4ec', fg: '#b91c1c' };
+  if (rsi < 2) return { label: 'Low demand', bg: '#e6f4ea', fg: '#1a7a3d' };
+  if (rsi < 4) return { label: 'Standard demand', bg: '#e8f5e9', fg: '#4a8a4f' };
+  if (rsi < 6) return { label: 'Elevated demand', bg: '#fff8e1', fg: '#b8860b' };
+  if (rsi < 8) return { label: 'High demand', bg: '#fff3e0', fg: '#d84315' };
+  return { label: 'Critical demand', bg: '#fce4ec', fg: '#b91c1c' };
 }
 
 // Component bar colours (Tier 1 = blues, Tier 2 = greys)
@@ -1130,13 +1109,11 @@ function openPanel(name, data) {
   // Build indicator rows with clickable explanations
   let rowsHTML = '';
   for (const [key, ind] of Object.entries(data.indicators)) {
-    const tier = tierLabels[key];
     const explanation = indicatorExplanations[key] || '';
     const rawStr = ind.raw ? `<div class="indicator-raw">${ind.raw}</div>` : '';
     rowsHTML += `
       <div class="indicator-row" onclick="this.classList.toggle('expanded')">
         <div class="indicator-header">
-          <span class="indicator-tier ${tier === 'T2' ? 't2' : ''}">${tier}</span>
           <span class="indicator-name">${ind.label}</span>
           <span class="indicator-score">${ind.score.toFixed(1)}</span>
           <span class="indicator-expand">&#9654;</span>
@@ -1159,7 +1136,7 @@ function openPanel(name, data) {
   content.innerHTML = `
     <div class="panel-ward-name">${name}</div>
     <div class="panel-rsi-score" style="color:${getRsiColor(data.rsi)}">${data.rsi.toFixed(1)}</div>
-    <div class="panel-band-label" style="background:${band.bg};color:${band.fg}">${band.label} &mdash; ${band.desc}</div>
+    <div class="panel-band-label" style="background:${band.bg};color:${band.fg}">${band.label}</div>
 
     <div class="panel-section-title">Score composition</div>
     ${barHTML}
